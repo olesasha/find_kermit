@@ -2,6 +2,8 @@ import re
 import os 
 import cv2
 from tqdm import tqdm
+import shutil
+import random
 
 def extract_frames(data_path: str, start_time: int = 15, frame_interval: float = 0.5):
     """
@@ -51,6 +53,7 @@ def extract_frames(data_path: str, start_time: int = 15, frame_interval: float =
     print(f"Frames extracted successfully, sampled every {frame_interval} seconds, skipping the first {start_time} seconds.")
     
 
+
 import os
 import shutil
 import random
@@ -68,28 +71,42 @@ def train_test_split(frames_path: str, train_path: str, val_path: str, test_path
     - val_size (float): Fraction of frames to allocate for validation (0 < val_size < 1).
     - test_size (float): Fraction of frames to allocate for testing (0 < test_size < 1).
     """
+    if not os.path.exists(train_path):
+        os.makedirs(train_path)
+    if not os.path.exists(val_path):
+        os.makedirs(val_path)
+    if not os.path.exists(test_path):
+        os.makedirs(test_path)
     
+    # List and sort frame files based on new naming convention
     frame_files = sorted(
-        [f for f in os.listdir(frames_path) if f.startswith("frame") and f.endswith(".png")],
-        key=lambda x: int(x[5:-4]) 
+        [f for f in os.listdir(frames_path) if f.endswith(".png")],
+        key=lambda x: (
+            x.split("_")[0],  # Sort by video identifier (e.g., "Muppets-02-01-01")
+            int(x.split("_frame")[1].split(".png")[0])  # Then by frame number
+        )
     )
     
     total_frames = len(frame_files)
     if total_frames == 0:
         raise ValueError("No frames found in the specified directory.")
     
+    # Calculate number of frames for validation and test sets
     num_val_frames = int(total_frames * val_size)
     num_test_frames = int(total_frames * test_size)
     
     if num_val_frames + num_test_frames >= total_frames:
         raise ValueError("Validation and test percentages must sum to less than 1.")
     
+    # Shuffle the frame files for randomness
     random.Random(42).shuffle(frame_files)
     
+    # Split frames into train, validation, and test sets
     test_frames = frame_files[:num_test_frames]
     val_frames = frame_files[num_test_frames:num_test_frames + num_val_frames]
     train_frames = frame_files[num_test_frames + num_val_frames:]
     
+    # Move frames to respective directories
     for frame in train_frames:
         shutil.move(os.path.join(frames_path, frame), os.path.join(train_path, frame))
     for frame in val_frames:
@@ -105,8 +122,7 @@ def delete_frames(path:str):
     Removes generated frames from the repository of choice.
     - path (str): path to the directory with frames that are to be removed
     """
-    pattern = re.compile(r'frame\d+\.png')
-
+    pattern = re.compile(r'.*\.png$')
     for root, _, files in os.walk(path):
         for file in files:
             if pattern.match(file): 
