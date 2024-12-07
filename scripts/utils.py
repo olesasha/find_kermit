@@ -4,59 +4,71 @@ import cv2
 from tqdm import tqdm
 import shutil
 import random
+import pandas as pd
 
-def extract_frames(data_path: str, start_time: int = 15, frame_interval: float = 0.5):
+def extract_frames(muppet_files: dict, data_path: str = "../ground_truth_data", output_dir: str = "../ground_truth_data/frames"):
     """
-    Extract frames from a video, sampling every `frame_interval` seconds,
-    and skipping the first `start_time` seconds.
+    Extract frames from videos specified in `muppet_files`, aligning each frame with rows in the 
+    corresponding annotation file. 
     
     Parameters:
-    - data_path (str): Path to the video file.
-    - start_time (int): Time in seconds to skip from the start of the video. Default: 15 seconds.
-    - frame_interval (float): Time interval in seconds to sample frames. Default: half a second.
+    - muppet_files (dict): Dictionary mapping video file names to annotation file paths.
+    - data_path (str): Directory containing the video and annotation files.
+    - output_dir (str): Directory to save the extracted frames. 
     """
-    capture = cv2.VideoCapture(data_path)
-    fps = capture.get(cv2.CAP_PROP_FPS)  
-    if not capture.isOpened():
-        print("Error: video file not accessible.")
-        return
-
-    # define starting point
-    capture.set(cv2.CAP_PROP_POS_MSEC, start_time * 1000) # convert to ms
     
-    total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration = total_frames / fps if fps > 0 else 0
-    
-    # extract samples every frame_interval
-    total_samples = int((duration - start_time) / frame_interval)
-    
-    # logging with tqdm
-    pbar = tqdm(total=total_samples, desc="Extracting frames")
-    frame_nr = 0
-    current_time = start_time * 1000  
+    for video_file, annotation_file in muppet_files.items():
 
-    # iterate through video and extract frames
-    while current_time < duration * 1000:
-        capture.set(cv2.CAP_PROP_POS_MSEC, current_time)
-        success, frame = capture.read()
+        video_path = os.path.join(data_path, video_file)
+        annotation_path = os.path.join(data_path, annotation_file)
+        
+        # checks for the existence of videos and annotations
+        if not os.path.exists(video_path):
+            print(f"Error: Video file '{video_path}' not found.")
+            continue
+        
+        if not os.path.exists(annotation_path):
+            print(f"Error: Annotation file '{annotation_path}' not found.")
+            continue
+        
+        # load annotations
+        annotations = pd.read_csv(annotation_path, sep=";")
+        total_frames = annotations.shape[0]  # number of annotations = number of frames
+        
+        # access the videos 
+        capture = cv2.VideoCapture(video_path)
+        if not capture.isOpened():
+            print(f"Error: Unable to open video file '{video_path}'.")
+            continue
+        
+        fps = capture.get(cv2.CAP_PROP_FPS) 
+        if fps <= 0:
+            print(f"Error: Invalid FPS for video '{video_path}'.")
+            capture.release()
+            continue
+        
+        # logging
+        pbar = tqdm(total=total_frames, desc=f"Extracting frames from {video_file}")
+        frame_nr = 0
+        
+        # iterate and extract frames to match annotation rows
+        for i in range(total_frames):
+            capture.set(cv2.CAP_PROP_POS_FRAMES, i) 
+            success, frame = capture.read()
+            
+            if success:
+                # save frame as "<video>_frame<frame_number>.png"
+                frame_name = f"{os.path.splitext(os.path.basename(video_file))[0]}_frame{i:03d}.png"
+                frame_path = os.path.join(output_dir, frame_name)
+                cv2.imwrite(frame_path, frame)
+                frame_nr += 1
+            
+            pbar.update(1)
+        
+        capture.release()
+        pbar.close()
+        print(f"Frames extracted from {video_file} and saved to {output_dir}.")
 
-        if success:
-            # save frame in target repo
-            cv2.imwrite(f'../ground_truth_data/frame{frame_nr}.png', frame)
-            frame_nr += 1
-
-        current_time += frame_interval * 1000 # convert to ms
-        pbar.update(1)
-
-    capture.release()
-    pbar.close()
-    print(f"Frames extracted successfully, sampled every {frame_interval} seconds, skipping the first {start_time} seconds.")
-    
-
-
-import os
-import shutil
-import random
 
 def train_test_split(frames_path: str, train_path: str, val_path: str, test_path: str, val_size: float, test_size: float):
     """
@@ -71,14 +83,7 @@ def train_test_split(frames_path: str, train_path: str, val_path: str, test_path
     - val_size (float): Fraction of frames to allocate for validation (0 < val_size < 1).
     - test_size (float): Fraction of frames to allocate for testing (0 < test_size < 1).
     """
-    if not os.path.exists(train_path):
-        os.makedirs(train_path)
-    if not os.path.exists(val_path):
-        os.makedirs(val_path)
-    if not os.path.exists(test_path):
-        os.makedirs(test_path)
     
-    # List and sort frame files based on new naming convention
     frame_files = sorted(
         [f for f in os.listdir(frames_path) if f.endswith(".png")],
         key=lambda x: (
@@ -91,22 +96,22 @@ def train_test_split(frames_path: str, train_path: str, val_path: str, test_path
     if total_frames == 0:
         raise ValueError("No frames found in the specified directory.")
     
-    # Calculate number of frames for validation and test sets
+    # calculate number of frames for validation and test sets
     num_val_frames = int(total_frames * val_size)
     num_test_frames = int(total_frames * test_size)
     
     if num_val_frames + num_test_frames >= total_frames:
         raise ValueError("Validation and test percentages must sum to less than 1.")
     
-    # Shuffle the frame files for randomness
+    # shuffle the frame files for randomness
     random.Random(42).shuffle(frame_files)
     
-    # Split frames into train, validation, and test sets
+    # split frames into train, validation, and test sets
     test_frames = frame_files[:num_test_frames]
     val_frames = frame_files[num_test_frames:num_test_frames + num_val_frames]
     train_frames = frame_files[num_test_frames + num_val_frames:]
     
-    # Move frames to respective directories
+    # move frames to respective directories
     for frame in train_frames:
         shutil.move(os.path.join(frames_path, frame), os.path.join(train_path, frame))
     for frame in val_frames:
