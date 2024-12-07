@@ -9,3 +9,6 @@ find_kermit
     - validation_data
 
 - sm_venv (venv, requirements.txt inside find_kermit)
+
+
+TODO: add needed python version somewhere
