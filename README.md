@@ -37,16 +37,36 @@ Finally, we test the dataloader in the setup_test.ipynb file.
 </thead>
 <tbody>
   <tr>
+    <td>06.11.2024</td>
+    <td>SM1/2 seminar</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>17.10.2024 - 17.11.2024</td>
+    <td>Watched SM 1/2 lectures + took notes</td>
+    <td>20</td>
+  </tr>
+  <tr>
     <td>24.10.2024</td>
     <td>Initial Team Meeting</td>
     <td>0.5</td>
+  </tr>
+  <tr>
+    <td>30.11.2024</td>
+    <td>Watched opencv tutorial, created script for frames extraction, train/test split and helpers</td>
+    <td>5</td>
   </tr>
   <tr>
     <td>01.12.2024</td>
     <td>Second Team Meeting - Discussion of extraction approach and work split</td>
     <td>0.5</td>
   </tr>
-      <tr>
+  <tr>
+    <td>06.12.2024</td>
+    <td>Further development of the data loading functions</td>
+    <td>3</td>
+  </tr>
+    <tr>
     <td>08.12.2024</td>
     <td>Third Team Meeting</td>
     <td>0.5</td>
