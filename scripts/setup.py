@@ -150,7 +150,7 @@ def extract_audio(muppet_files: dict, data_path: str, output_dir: str, annotatio
             end_sample = start_sample + samples_per_frame
 
             if end_sample > len(audio):
-                end_sample = len(audio)  # Handle edge case for the last frame
+                end_sample = len(audio)
 
             segment = audio[start_sample:end_sample]
             segment_name = f"{os.path.splitext(video_file)[0]}_frame{frame_idx:03d}.wav"
@@ -167,13 +167,13 @@ def extract_audio(muppet_files: dict, data_path: str, output_dir: str, annotatio
 
 if __name__ == "__main__":
     # Define paths and files
-    data_path = "../ground_truth_data"
-    #data_path = "../ground_truth_data/trimmed_videos"
+    #data_path = "../ground_truth_data"
+    data_path = "../ground_truth_data/trimmed_videos"
     
     frames_output_dir = "../ground_truth_data/frames"
     audio_output_dir = "../ground_truth_data/audio"
-    #annotations_path = "../ground_truth_data/trimmed_videos"
-    annotations_path = "../ground_truth_data"
+    annotations_path = "../ground_truth_data/trimmed_videos"
+    #annotations_path = "../ground_truth_data"
     
     
     muppet_files = {

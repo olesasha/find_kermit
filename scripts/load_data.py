@@ -9,12 +9,14 @@ import subprocess
 import sys
 
 # Define paths
-#data_path = "../ground_truth_data/trimmed_videos"
-data_path = "../ground_truth_data"
+data_path = "../ground_truth_data/trimmed_videos"
+#data_path = "../ground_truth_data"
+
 frames_output_dir = "../ground_truth_data/frames"
 audio_output_dir = "../ground_truth_data/audio"
-#annotations_path = "../ground_truth_data/trimmed_videos"
-annotations_path = "../ground_truth_data"
+
+annotations_path = "../ground_truth_data/trimmed_videos"
+#annotations_path = "../ground_truth_data"
 
 muppet_files = {
     "Muppets-02-01-01.avi": "GroundTruth_Muppets-02-01-01.csv",
