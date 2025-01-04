@@ -4,6 +4,7 @@ import librosa
 import cv2
 from tqdm import tqdm
 import soundfile as sf
+import argparse
 
 def load_annotations(data_path: str, muppet_files: dict):
     """
@@ -108,14 +109,22 @@ def extract_audio(muppet_files: dict, data_path: str, output_dir: str, annotatio
         annotations = pd.read_csv(annotation_path, sep=";")
         num_frames = len(annotations)
 
+        # HIIIER
         # Retrieve video duration
         try:
             # extract video duration
             duration_command = (
-                f"ffprobe -v error -select_streams v:0 -show_entries "
-                f"format=duration -of default=noprint_wrappers=1:nokey=1 \"{video_path}\""
+                f"ffprobe -v error -select_streams v:0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{video_path}\""
             )
-            video_duration = float(os.popen(duration_command).read().strip())
+
+            ffprobe_out = os.popen(duration_command).read().strip()
+
+            
+            # Check if output is empty
+            if not ffprobe_out:
+                raise ValueError(f"Could not retrieve duration for video: {video_path}")
+
+            video_duration = float(ffprobe_out)
         except Exception as e:
             print(f"Error retrieving duration for video '{video_file}': {e}")
             continue
@@ -165,29 +174,45 @@ def extract_audio(muppet_files: dict, data_path: str, output_dir: str, annotatio
         print(f"Extracted and aligned audio segments for '{video_file}'. Full audio saved to '{full_audio_dir}'.")
 
 
-if __name__ == "__main__":
-    # Define paths and files
-    #data_path = "../ground_truth_data"
-    data_path = "../ground_truth_data/trimmed_videos"
-    
-    frames_output_dir = "../ground_truth_data/frames"
-    audio_output_dir = "../ground_truth_data/audio"
-    annotations_path = "../ground_truth_data/trimmed_videos"
-    #annotations_path = "../ground_truth_data"
-    
-    
-    muppet_files = {
-        "Muppets-02-01-01.avi": "GroundTruth_Muppets-02-01-01.csv",
-        "Muppets-02-04-04.avi": "GroundTruth_Muppets-02-04-04.csv",
-        "Muppets-03-04-03.avi": "GroundTruth_Muppets-03-04-03.csv",
-    }
 
+
+def run_setup(data_path, frames_output_dir, audio_output_dir, annotations_path, muppet_files):
     # Step 1: Load annotations
     annotations = load_annotations(annotations_path, muppet_files)
 
     # Step 2: Extract frames
     extract_frames(muppet_files, annotations, data_path, frames_output_dir)
 
-    # Step 3: Extract audio (pass annotations to avoid reloading them)
+    # Step 3: Extract audio
     extract_audio(muppet_files, data_path, audio_output_dir, annotations_path)
+
+
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description="Extract frames and audio for Muppet videos.")
+#     parser.add_argument("--data_path", type=str, required=True, help="Directory containing the video files.")
+#     parser.add_argument("--frames_output_dir", type=str, required=True, help="Directory to save extracted frames.")
+#     parser.add_argument("--audio_output_dir", type=str, required=True, help="Directory to save extracted audio.")
+#     parser.add_argument("--annotations_path", type=str, required=True, help="Directory containing annotation files.")
+#     args = parser.parse_args()
+
+#     data_path = args.data_path
+#     frames_output_dir = args.frames_output_dir
+#     audio_output_dir = args.audio_output_dir
+#     annotations_path = args.annotations_path
+
+#     # TODO: das hier ist nicht elegant!
+#     muppet_files = {
+#         "Muppets-02-01-01.avi": "GroundTruth_Muppets-02-01-01.csv",
+#         "Muppets-02-04-04.avi": "GroundTruth_Muppets-02-04-04.csv",
+#         "Muppets-03-04-03.avi": "GroundTruth_Muppets-03-04-03.csv",
+#     }
+
+#     # Step 1: Load annotations
+#     annotations = load_annotations(annotations_path, muppet_files)
+
+#     # Step 2: Extract frames
+#     extract_frames(muppet_files, annotations, data_path, frames_output_dir)
+
+#     # Step 3: Extract audio
+#     extract_audio(muppet_files, data_path, audio_output_dir, annotations_path)
 

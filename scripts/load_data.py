@@ -8,21 +8,23 @@ import importlib.util
 import subprocess
 import sys
 
-# Define paths
-data_path = "../ground_truth_data/trimmed_videos"
-#data_path = "../ground_truth_data"
+from scripts.setup import run_setup
 
-frames_output_dir = "../ground_truth_data/frames"
-audio_output_dir = "../ground_truth_data/audio"
+# # Define paths
+# #data_path = "../ground_truth_data/trimmed_videos"
+# data_path = "../ground_truth_data"
 
-annotations_path = "../ground_truth_data/trimmed_videos"
-#annotations_path = "../ground_truth_data"
+# frames_output_dir = "../ground_truth_data/frames"
+# audio_output_dir = "../ground_truth_data/audio"
 
-muppet_files = {
-    "Muppets-02-01-01.avi": "GroundTruth_Muppets-02-01-01.csv",
-    "Muppets-02-04-04.avi": "GroundTruth_Muppets-02-04-04.csv",
-    "Muppets-03-04-03.avi": "GroundTruth_Muppets-03-04-03.csv",
-}
+# #annotations_path = "../ground_truth_data/trimmed_videos"
+# annotations_path = "../ground_truth_data"
+
+# muppet_files = {
+#     "Muppets-02-01-01.avi": "GroundTruth_Muppets-02-01-01.csv",
+#     "Muppets-02-04-04.avi": "GroundTruth_Muppets-02-04-04.csv",
+#     "Muppets-03-04-03.avi": "GroundTruth_Muppets-03-04-03.csv",
+# }
 
 # Flag to determine whether to load full audio or audio segments
 LOAD_FULL_AUDIO = False
@@ -36,14 +38,33 @@ def check_extracted(frames_output_dir, audio_output_dir):
 
     return frames_extracted, audio_extracted
 
-def run_setup_script():
-    """
-    Runs the scripts/setup.py to extract frames and audio if needed.
-    """
-    setup_script = "scripts/setup.py"
-    if not os.path.exists(setup_script):
-        raise FileNotFoundError(f"{setup_script} not found. Please check the path")
-    os.system(f"python {setup_script}")
+# def run_setup_script(data_path, frames_output_dir, audio_output_dir, annotations_path):
+#     """
+#     Runs the scripts/setup.py to extract frames and audio if needed.
+
+#     Parameters:
+#     - data_path (str): Directory containing the video files.
+#     - frames_output_dir (str): Directory to save extracted frames.
+#     - audio_output_dir (str): Directory to save extracted audio.
+#     - annotations_path (str): Directory containing annotation files.
+#     """
+#     setup_script = "scripts/setup.py"
+#     if not os.path.exists(setup_script):
+#         raise FileNotFoundError(f"{setup_script} not found. Please check the path.")
+
+#     # Build the command with arguments
+#     command = (
+#         f"python {setup_script} "
+#         f"--data_path \"{data_path}\" "
+#         f"--frames_output_dir \"{frames_output_dir}\" "
+#         f"--audio_output_dir \"{audio_output_dir}\" "
+#         f"--annotations_path \"{annotations_path}\""
+#     )
+    
+#     # Run the setup script with the provided paths
+#     os.system(command)
+#     print("ran")
+
 
 
 
@@ -159,7 +180,7 @@ def load_frames(muppet_files: dict, frames_output_dir: str):
 
 
 
-def check_and_load():
+def check_and_load(data_path, frames_output_dir, audio_output_dir, annotations_path, muppet_files):
     """
     Check if frames and audio are extracted, and load them along with annotations.
 
@@ -173,7 +194,8 @@ def check_and_load():
 
     if not (frames_extracted and audio_extracted):
         print("Frames and/or audio not extracted. Running setup script...")
-        run_setup_script()
+        #run_setup_script(data_path, frames_output_dir, audio_output_dir, annotations_path)
+        run_setup(data_path, frames_output_dir, audio_output_dir, annotations_path, muppet_files)
     else:
         print("Frames and audio are already extracted.")
 
@@ -202,21 +224,40 @@ def check_and_load():
         print(f"Video {video_idx} has {len(frame_list)} frames.")
 
     return annotations, audio_data, frames
+    
 
 
 
 
 
-if __name__ == "__main__":
-    annotations, audio_data, frames = check_and_load()
+# if __name__ == "__main__":
 
-    if LOAD_FULL_AUDIO:
-        print("Full audio files loaded and ready for analysis.")
+#     # Define paths
+#     #data_path = "../ground_truth_data/trimmed_videos"
+#     data_path = "../ground_truth_data"
+
+#     frames_output_dir = "../ground_truth_data/frames"
+#     audio_output_dir = "../ground_truth_data/audio"
+
+#     #annotations_path = "../ground_truth_data/trimmed_videos"
+#     annotations_path = "../ground_truth_data"
+
+#     muppet_files = {
+#         "Muppets-02-01-01.avi": "GroundTruth_Muppets-02-01-01.csv",
+#         "Muppets-02-04-04.avi": "GroundTruth_Muppets-02-04-04.csv",
+#         "Muppets-03-04-03.avi": "GroundTruth_Muppets-03-04-03.csv",
+#     }
+
+
+#     annotations, audio_data, frames = check_and_load(frames_output_dir, audio_output_dir, muppet_files, annotations_path)
+
+#     if LOAD_FULL_AUDIO:
+#         print("Full audio files loaded and ready for analysis.")
     
     
-    print("Audio segments loaded and ready for analysis.")
+#     print("Audio segments loaded and ready for analysis.")
 
-    print("Frames and audio successfully loaded.")
+#     print("Frames and audio successfully loaded.")
 
 
 
