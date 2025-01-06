@@ -7,9 +7,9 @@ from scipy.signal import correlate
 AUDIO_SAMPLING_RATE = 44100
 FRAMES_PER_SECOND = 25
 # Calculate expected length
-expected_length = int(AUDIO_SAMPLING_RATE / FRAMES_PER_SECOND)
+samples_per_frame = int(AUDIO_SAMPLING_RATE / FRAMES_PER_SECOND)
 
-def pad_audio(audio, expected_length):
+def pad_audio(audio, duration):
     """
     Pad audio with zeros to match the expected length.
 
@@ -20,9 +20,14 @@ def pad_audio(audio, expected_length):
     Returns:
     - ndarray: Padded audio signal.
     """
-    if len(audio) < expected_length:
-        padding = expected_length - len(audio)
-        audio = np.pad(audio, (0, padding), mode="constant")
+    req_length = int(AUDIO_SAMPLING_RATE * duration)
+    #print(f"exp: {req_length}")
+    #print(len(audio))
+    if len(audio) < req_length:
+        padding = req_length - len(audio)
+        audio = np.pad(audio, (0, padding - 1), mode="constant")
+        #print(padding)
+
     return audio
 
 def extract_zcr(audio_data):
@@ -40,16 +45,17 @@ def extract_zcr(audio_data):
     for audio_entry in audio_data:
         try:
             audio = audio_entry['audio']
+            duration = audio_entry['duration']
 
             # Pad and normalize audio
-            audio = pad_audio(audio, expected_length)
+            audio = pad_audio(audio, duration)
             audio = librosa.util.normalize(audio)
 
             # Calculate ZCR
             zcr = librosa.feature.zero_crossing_rate(
                     y=audio,
-                    hop_length=expected_length,
-                    frame_length=expected_length,
+                    hop_length=samples_per_frame,
+                    frame_length=samples_per_frame,
                 )[0]
 
             zcr_features.append(zcr)
@@ -74,16 +80,17 @@ def extract_loudness(audio_data):
     for audio_entry in audio_data:
         try:
             audio = audio_entry['audio']
+            duration = audio_entry['duration']
 
             # Pad and normalize audio
-            audio = pad_audio(audio, expected_length)
+            audio = pad_audio(audio, duration)
             audio = librosa.util.normalize(audio)
 
             # Calculate RMS
             rms = librosa.feature.rms(
                 y=audio,
-                frame_length=expected_length,
-                hop_length=expected_length
+                frame_length=samples_per_frame,
+                hop_length=samples_per_frame
             )[0]
 
             loudness_features.append(rms)
@@ -108,13 +115,14 @@ def extract_rhythm(audio_data):
     for audio_entry in audio_data:
         try:
             audio = audio_entry['audio']
+            duration = audio_entry['duration']
 
             # Pad and normalize audio
-            audio = pad_audio(audio, expected_length)
+            audio = pad_audio(audio, duration)
             audio = librosa.util.normalize(audio)
 
             # Split audio into frames
-            frames = librosa.util.frame(audio, frame_length=expected_length, hop_length=expected_length)
+            frames = librosa.util.frame(audio, frame_length=samples_per_frame, hop_length=samples_per_frame)
 
             # Calculate rhythm strength for each frame
             frame_rhythms = []

@@ -20,14 +20,78 @@ def check_extracted(frames_output_dir, audio_output_dir):
     return frames_extracted, audio_extracted
 
 
-def load_full_audio(audio_output_dir):
+def load_full_audio(audio_output_dir, muppet_files, data_path):
     """
     Load audio files into memory. - needs to be called manually if wanted
     """
     audio_data = []
+
+    # First, map audio file names to video file names
+    audio_to_video_map = {Path(video_file).stem: video_file for video_file in muppet_files.keys()}
+
+    # Process audio files and add the video duration
     for audio_file in Path(audio_output_dir).glob("*.wav"):
-        audio, sr = librosa.load(str(audio_file), sr=None)
-        audio_data.append({"audio_file": audio_file.name, "audio": audio, "sr": sr})
+        try:
+            # Load audio
+            audio, sr = librosa.load(str(audio_file), sr=None)
+            audio_file_name = Path(audio_file).stem
+            
+            # Get the corresponding video file name
+            video_file = audio_to_video_map.get(audio_file_name)
+            if not video_file:
+                raise ValueError(f"No corresponding video file found for audio file: {audio_file_name}")
+            
+            # Extract video duration
+            video_path = os.path.join(data_path, video_file)
+            duration_command = (
+                f"ffprobe -v error -select_streams v:0 -show_entries format=duration "
+                f"-of default=noprint_wrappers=1:nokey=1 \"{video_path}\""
+            )
+            ffprobe_out = os.popen(duration_command).read().strip()
+            if not ffprobe_out:
+                raise ValueError(f"Could not retrieve duration for video: {video_path}")
+            
+            video_duration = float(ffprobe_out)
+
+            # Append the data with the duration
+            audio_data.append({
+                "audio_file": audio_file.name,
+                "audio": audio,
+                "sr": sr,
+                "duration": video_duration
+            })
+        except Exception as e:
+            print(f"Error processing audio file '{audio_file}': {e}")
+            continue
+
+
+
+    # for audio_file in Path(audio_output_dir).glob("*.wav"):
+    #     audio, sr = librosa.load(str(audio_file), sr=None)
+    #     audio_data.append({"audio_file": audio_file.name, "audio": audio, "sr": sr})
+
+
+    # for i in muppet_files.keys():
+    #     video_path = os.path.join(data_path, i)
+        
+    #     try:
+    #         # extract video duration
+    #         duration_command = (
+    #             f"ffprobe -v error -select_streams v:0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{video_path}\""
+    #         )
+
+    #         ffprobe_out = os.popen(duration_command).read().strip()
+    #         # Check if output is empty
+    #         if not ffprobe_out:
+    #             raise ValueError(f"Could not retrieve duration for video: {video_path}")
+
+    #     except Exception as e:
+    #         print(f"Error retrieving duration for video '{i}': {e}")
+    #         continue
+    #     video_duration = float(ffprobe_out)    
+    
+    
+    
     print(f"Loaded {len(audio_data)} audio files.")
 
     return audio_data
@@ -110,7 +174,7 @@ def check_and_load(data_path, frames_output_dir, audio_output_dir, annotations_p
 
 
     print("Loading audio segments...")
-    audio_data = load_full_audio(audio_output_dir)
+    audio_data = load_full_audio(audio_output_dir, muppet_files, data_path)
 
     print(f"Loaded audio segments for {len(audio_data)} videos.")
     # Inspect loaded audio segments
@@ -122,6 +186,9 @@ def check_and_load(data_path, frames_output_dir, audio_output_dir, annotations_p
     print(f"Number of videos with frames: {len(frames)}")
     for video_idx, frame_list in frames.items():
         print(f"Video {video_idx} has {len(frame_list)} frames.")
+
+
+    
 
     return annotations, audio_data, frames
     
