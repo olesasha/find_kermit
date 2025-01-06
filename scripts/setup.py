@@ -4,6 +4,7 @@ import librosa
 import cv2
 from tqdm import tqdm
 import soundfile as sf
+import argparse
 
 def load_annotations(data_path: str, muppet_files: dict):
     """
@@ -74,120 +75,73 @@ def extract_frames(muppet_files: dict, annotations: dict, data_path: str, output
         print(f"Frames extracted from '{video_file}' and saved to '{output_dir}'.")
 
 
-
-def extract_audio(muppet_files: dict, data_path: str, output_dir: str, annotations_path: str):
+def extract_audio(muppet_files: dict, data_path: str, output_dir: str, sampling_rate: int = 44100):
     """
-    Extract audio segments aligned to video frames based on ground truth data and save them in the output_dir.
-    Save full audio files in a separate folder within the output directory.
+    Extract full audio from video files and save them in the output directory.
 
     Parameters:
-    - muppet_files (dict): Dictionary mapping video filenames to annotation filenames.
-    - data_path (str): Base directory containing the video files.
-    - output_dir (str): Directory to save the extracted audio segments.
-    - annotations_path (str): Directory containing the ground truth annotation files.
+    - muppet_files (dict): Dictionary mapping video filenames to annotation filenames (annotations ignored here).
+    - data_path (str): Directory containing the video files.
+    - output_dir (str): Directory to save the extracted audio files.
+    - sampling_rate (int): The desired sampling rate for the extracted audio.
     """
-    # Ensure the output directory and subfolders exist
     os.makedirs(output_dir, exist_ok=True)
-    full_audio_dir = os.path.join(output_dir, "full_audio")
-    os.makedirs(full_audio_dir, exist_ok=True)
 
-    # Loop through the muppet_files dictionary
-    for video_file, annotation_file in muppet_files.items():
+    for video_file in muppet_files.keys():
         video_path = os.path.join(data_path, video_file)
-        annotation_path = os.path.join(annotations_path, annotation_file)
+        output_audio_path = os.path.join(output_dir, os.path.splitext(video_file)[0] + ".wav")
 
         if not os.path.exists(video_path):
             print(f"Error: Video file '{video_path}' not found.")
             continue
 
-        if not os.path.exists(annotation_path):
-            print(f"Error: Annotation file '{annotation_path}' not found.")
-            continue
-
-        # Load annotations
-        annotations = pd.read_csv(annotation_path, sep=";")
-        num_frames = len(annotations)
-
-        # Retrieve video duration
         try:
-            # extract video duration
-            duration_command = (
-                f"ffprobe -v error -select_streams v:0 -show_entries "
-                f"format=duration -of default=noprint_wrappers=1:nokey=1 \"{video_path}\""
-            )
-            video_duration = float(os.popen(duration_command).read().strip())
+            # Extract audio using ffmpeg
+            command = f'ffmpeg -i "{video_path}" -ab 160k -ac 2 -ar {sampling_rate} -vn "{output_audio_path}"'
+            os.system(command)
+            print(f"Audio extracted for '{video_file}' and saved to '{output_audio_path}'.")
         except Exception as e:
-            print(f"Error retrieving duration for video '{video_file}': {e}")
-            continue
-
-        # Calculate number of audio samples per frame
-        sampling_rate = 44100  # Standard audio sampling rate
-        total_audio_samples = int(sampling_rate * video_duration)
-        samples_per_frame = total_audio_samples // num_frames
-
-        # Save full audio 
-        full_audio_name = os.path.splitext(video_file)[0] + ".wav"
-        full_audio_path = os.path.join(full_audio_dir, full_audio_name)
-
-        try:
-            os.system(
-                f"ffmpeg -i \"{video_path}\" -ab 160k -ac 2 -ar {sampling_rate} -vn \"{full_audio_path}\""
-            )
-        except Exception as e:
-            print(f"Error extracting full audio from '{video_file}': {e}")
-            continue
-
-        # Load the full audio
-        try:
-            audio, sr = librosa.load(full_audio_path, sr=sampling_rate)
-        except Exception as e:
-            print(f"Error loading audio from '{full_audio_path}': {e}")
-            continue
-
-        # Extract aligned audio segments
-        for frame_idx in range(num_frames):
-            start_sample = frame_idx * samples_per_frame
-            end_sample = start_sample + samples_per_frame
-
-            if end_sample > len(audio):
-                end_sample = len(audio)
-
-            segment = audio[start_sample:end_sample]
-            segment_name = f"{os.path.splitext(video_file)[0]}_frame{frame_idx:03d}.wav"
-            segment_path = os.path.join(output_dir, segment_name)
-
-            try:
-                # Save the audio segment using soundfile
-                sf.write(segment_path, segment, samplerate=sampling_rate)
-            except Exception as e:
-                print(f"Error writing audio segment {frame_idx} for '{video_file}': {e}")
-
-        print(f"Extracted and aligned audio segments for '{video_file}'. Full audio saved to '{full_audio_dir}'.")
+            print(f"Error extracting audio for '{video_file}': {e}")
 
 
-if __name__ == "__main__":
-    # Define paths and files
-    #data_path = "../ground_truth_data"
-    data_path = "../ground_truth_data/trimmed_videos"
-    
-    frames_output_dir = "../ground_truth_data/frames"
-    audio_output_dir = "../ground_truth_data/audio"
-    annotations_path = "../ground_truth_data/trimmed_videos"
-    #annotations_path = "../ground_truth_data"
-    
-    
-    muppet_files = {
-        "Muppets-02-01-01.avi": "GroundTruth_Muppets-02-01-01.csv",
-        "Muppets-02-04-04.avi": "GroundTruth_Muppets-02-04-04.csv",
-        "Muppets-03-04-03.avi": "GroundTruth_Muppets-03-04-03.csv",
-    }
 
+def run_setup(data_path, frames_output_dir, audio_output_dir, annotations_path, muppet_files):
     # Step 1: Load annotations
     annotations = load_annotations(annotations_path, muppet_files)
 
     # Step 2: Extract frames
     extract_frames(muppet_files, annotations, data_path, frames_output_dir)
 
-    # Step 3: Extract audio (pass annotations to avoid reloading them)
-    extract_audio(muppet_files, data_path, audio_output_dir, annotations_path)
+    # Step 3: Extract audio
+    extract_audio(muppet_files, data_path, audio_output_dir)
+
+
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description="Extract frames and audio for Muppet videos.")
+#     parser.add_argument("--data_path", type=str, required=True, help="Directory containing the video files.")
+#     parser.add_argument("--frames_output_dir", type=str, required=True, help="Directory to save extracted frames.")
+#     parser.add_argument("--audio_output_dir", type=str, required=True, help="Directory to save extracted audio.")
+#     parser.add_argument("--annotations_path", type=str, required=True, help="Directory containing annotation files.")
+#     args = parser.parse_args()
+
+#     data_path = args.data_path
+#     frames_output_dir = args.frames_output_dir
+#     audio_output_dir = args.audio_output_dir
+#     annotations_path = args.annotations_path
+
+#     # TODO: das hier ist nicht elegant!
+#     muppet_files = {
+#         "Muppets-02-01-01.avi": "GroundTruth_Muppets-02-01-01.csv",
+#         "Muppets-02-04-04.avi": "GroundTruth_Muppets-02-04-04.csv",
+#         "Muppets-03-04-03.avi": "GroundTruth_Muppets-03-04-03.csv",
+#     }
+
+#     # Step 1: Load annotations
+#     annotations = load_annotations(annotations_path, muppet_files)
+
+#     # Step 2: Extract frames
+#     extract_frames(muppet_files, annotations, data_path, frames_output_dir)
+
+#     # Step 3: Extract audio
+#     extract_audio(muppet_files, data_path, audio_output_dir, annotations_path)
 
