@@ -3,6 +3,9 @@ import pandas as pd
 import cv2
 from skimage.feature import graycomatrix, graycoprops
 from sklearn.preprocessing import MinMaxScaler
+from tqdm import tqdm
+
+# HELPER FUNCTIONS 
 
 def extract_dominant_colors(image_path, num_clusters=10, num_colors=5):
     """
@@ -56,8 +59,9 @@ def extract_contours(image_path, d = 7):
     
     image = cv2.imread(image_path)
 
-    # convert the image to grayscale
+    # convert the image to grayscale and resize
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.resize(gray, (100, 100))
     
     # apply bilateral blur
     bilateral_blur = cv2.bilateralFilter(gray, d, 75, 75)
@@ -109,10 +113,121 @@ def extract_glcm_features(image_path, distance=1, angles=[0, np.pi/4, np.pi/2, 3
 
     # create a dictionary to store the normalized features
     feature_dict = {
-        'Contrast': features_normalized[:, 0].tolist(),
-        'Correlation': features_normalized[:, 1].tolist(),
-        'Energy': features_normalized[:, 2].tolist(),
-        'Homogeneity': features_normalized[:, 3].tolist()
+        'Contrast': np.mean(features_normalized[:, 0]),
+        'Correlation': np.mean(features_normalized[:, 1]),
+        'Energy': np.mean(features_normalized[:, 2]),
+        'Homogeneity': np.mean(features_normalized[:, 3])
     }
 
     return feature_dict
+
+# EXTRACTION FUNCTIONS 
+def extract_dominant_colors_from_video(frames, num_clusters=10, num_colors=5):
+    """
+    Extract dominant colors from video frames provided in a dictionary format.
+
+    Parameters
+    ----------
+    frames : frames dict
+    num_clusters : number of clusters to use in k-means for color extraction.
+    num_colors : number of dominant colors to show. 
+
+    Returns
+    -------
+    list of dicts where each dictionary contains video_id, frame_id and the dominant colors for that frame.
+    """
+    results = []
+
+    for video_id, frame_list in frames.items():
+        print(f"Processing video ID: {video_id}")
+        for frame_id, frame_path in tqdm(frame_list, desc=f"Processing frames for video {video_id}"):
+            try:
+                dominant_colors = extract_dominant_colors(frame_path, num_clusters, num_colors)
+                results.append({
+                    "video_id": video_id,
+                    "frame_id": frame_id,
+                    "dominant_colors": dominant_colors.tolist()  
+                })
+            except Exception as e:
+                print(f"Error processing frame {frame_path}: {e}")
+                results.append({
+                    "video_id": video_id,
+                    "frame_id": frame_id,
+                    "dominant_colors": None 
+                })
+
+    return results
+
+def extract_contours_from_video(frames, d=7):
+    """
+    Extract contours from video frames provided in a dictionary format.
+
+    Parameters
+    ----------
+    frames : frames dict
+    d: diameter of the pixel neighborhood used for bilateral filtering
+    
+    Returns
+    -------
+    list of dicts where each dictionary contains video_id, frame_id and the contours for that frame.
+    """
+    results = []
+
+    for video_id, frame_list in frames.items():
+        print(f"Processing video ID: {video_id}")
+        for frame_id, frame_path in tqdm(frame_list, desc=f"Processing frames for video {video_id}", mininterval=2):
+            try:
+                contours = extract_contours(frame_path, d=7)
+                results.append({
+                    "video_id": video_id,
+                    "frame_id": frame_id,
+                    "contours": contours.tolist()  
+                })
+            except Exception as e:
+                print(f"Error processing frame {frame_path}: {e}")
+                results.append({
+                    "video_id": video_id,
+                    "frame_id": frame_id,
+                    "contours": None 
+                })
+
+    return results
+
+def extract_glcm_features_from_video(frames, distance=1, angles=[0, np.pi/4, np.pi/2, 3*np.pi/4]):
+    """
+    Extract GLCM features from video frames provided in a dictionary format.
+
+    Parameters
+    ----------
+    frames : frames dict
+    distance : distance for GLCM calculation
+    angles : list of angles for GLCM calculation, by default [0, np.pi/4, np.pi/2, 3*np.pi/4].
+
+    Returns
+    -------
+    list of dict containing video_id, frame_id, and the GLCM features for that frame.
+    """
+    results = []
+
+    for video_id, frame_list in frames.items():
+        print(f"Processing video ID: {video_id}")
+        for frame_id, frame_path in tqdm(frame_list, desc=f"Processing frames for video {video_id}", mininterval=1):
+            try:
+                feature_dict = extract_glcm_features(frame_path, distance=distance, angles=angles)
+                results.append({
+                    "video_id": video_id,
+                    "frame_id": frame_id,
+                    **feature_dict
+                })
+            except Exception as e:
+                print(f"Error processing frame {frame_path}: {e}")
+                results.append({
+                    "video_id": video_id,
+                    "frame_id": frame_id,
+                    "Contrast": None,
+                    "Correlation": None,
+                    "Energy": None,
+                    "Homogeneity": None
+                })
+
+    return results

@@ -11,14 +11,14 @@ SPLIT_POINTS = {
 }
 
 
-def partition_feature_df(feature_df, split_points = SPLIT_POINTS):
+def partition_feature_df(feature_df, target_list, split_points = SPLIT_POINTS):
     """
     Partitions the feature dataframe into folds based on pre-defined split points for each video.
 
     Parameters:
     - feature_df: pd.DataFrame, the dataframe containing features and episode information.
     - split_points: dict, mapping of video indices to the frame numbers at which to split episodes.
-
+    - target_list: list of str of target columns in the annotations
     Returns:
     - feature_df: pd.DataFrame, updated with a new 'fold' column indicating the fold assignment.
     """
@@ -36,7 +36,7 @@ def partition_feature_df(feature_df, split_points = SPLIT_POINTS):
 
 
     split_overview = (
-    feature_df.groupby(['video_idx', 'fold'])[['Kermit', 'Audio_StatlerWaldorf']]
+    feature_df.groupby(['video_idx', 'fold'])[target_list]
     .apply(lambda group: group.eq(1).sum())  # Count occurrences where the value equals 1
     .reset_index()
     )
