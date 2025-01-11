@@ -304,28 +304,8 @@ def evaluate_model(best_models, feature_df, train_cols, target_col, cv_results, 
     # Extract ROC AUC scores from cv_results
     auc_scores = cv_results.set_index('outer_fold')['roc_auc'].to_dict()
 
-    # # Calculate AUC for all folds if required
-    # for fold, model in best_models.items():
-    #     val_data = feature_df[feature_df['fold'] == fold]
-    #     X_val = val_data[train_cols].values
-    #     y_val = val_data[target_col].values
-
-    #     # Convert X_val to DMatrix if model is a Booster
-    #     if isinstance(model, xgb.Booster):
-    #         X_val = xgb.DMatrix(X_val)
-
-    #     if hasattr(model, 'predict_proba'):
-    #         y_proba = model.predict_proba(X_val)[:, 1]
-    #         auc_scores[fold] = roc_auc_score(y_val, y_proba)
-    #     elif isinstance(model, xgb.Booster):
-    #         y_proba = model.predict(X_val)
-    #         auc_scores[fold] = roc_auc_score(y_val, y_proba) if y_proba is not None else None
-    #     else:
-    #         auc_scores[fold] = None
-
     # If only_best_auc is True, find the fold with the highest AUC
     if spec_fold == 'best':
-
         best_fold = max(auc_scores, key=auc_scores.get)
         best_models = {best_fold: best_models[best_fold]}
 
