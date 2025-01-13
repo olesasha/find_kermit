@@ -11,7 +11,7 @@ SPLIT_POINTS = {
 }
 
 
-def partition_feature_df(feature_df, split_points = SPLIT_POINTS):
+def partition_feature_df(feature_df, grp_by, split_points = SPLIT_POINTS):
     """
     Partitions the feature dataframe into folds based on pre-defined split points for each video.
 
@@ -36,7 +36,7 @@ def partition_feature_df(feature_df, split_points = SPLIT_POINTS):
 
 
     split_overview = (
-    feature_df.groupby(['video_idx', 'fold'])[['Kermit', 'Audio_StatlerWaldorf']]
+    feature_df.groupby(['video_idx', 'fold'])[grp_by]
     .apply(lambda group: group.eq(1).sum())  # Count occurrences where the value equals 1
     .reset_index()
     )
@@ -52,7 +52,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import pandas as pd
 import numpy as np
 
-def nested_cross_validation(feature_df, train_cols, target_col, model_class, param_grid, num_cores = -1, scale = True):
+def nested_cross_validation(feature_df, train_cols, target_col, model_class, param_grid, num_cores = -1, scale = True, scoring = 'roc_auc'):
     """
     Perform nested cross-validation for hyperparameter tuning and model evaluation using predefined folds.
 
@@ -121,7 +121,7 @@ def nested_cross_validation(feature_df, train_cols, target_col, model_class, par
             grid_search = GridSearchCV(
                 estimator=pipeline,
                 param_grid=pipeline_param_grid,
-                scoring='roc_auc',  # Change this metric based on the problem
+                scoring= scoring,  # Change this metric based on the problem
                 cv=[(np.arange(len(X_inner_train)), np.arange(len(X_inner_val)))],
                 n_jobs= num_cores
             )
