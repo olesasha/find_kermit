@@ -21,14 +21,58 @@ def pad_audio(audio, duration):
     - ndarray: Padded audio signal.
     """
     req_length = int(AUDIO_SAMPLING_RATE * duration)
+
     #print(f"exp: {req_length}")
     #print(len(audio))
     if len(audio) < req_length:
         padding = req_length - len(audio)
-        audio = np.pad(audio, (0, padding - 1), mode="constant")
+        audio = np.pad(audio, (0, padding), mode="constant")
         #print(padding)
 
     return audio
+
+
+def extract_mfcc(audio_data, n_mfcc=20):
+    """
+    Extract Mel-Frequency Cepstral Coefficients (MFCCs) for each audio file.
+
+    Parameters:
+    - audio_data (list): List of dictionaries with audio data and metadata.
+    - n_mfcc (int): Number of MFCCs to extract.
+    - frames_per_second (int): Frame rate for MFCC extraction.
+
+    Returns:
+    - mfcc_features (list): List of MFCC features for each audio file.
+    """
+    mfcc_features = []
+
+    for audio_entry in audio_data:
+        try:
+            audio = audio_entry['audio']
+            sr = audio_entry['sr']
+            duration = audio_entry['duration']
+
+            # Pad and normalize audio
+            audio = pad_audio(audio, duration)
+            audio = librosa.util.normalize(audio)
+
+            # Compute MFCCs
+            mfcc = librosa.feature.mfcc(
+                y=audio,
+                sr=sr,
+                hop_length=samples_per_frame,
+                win_length=samples_per_frame,
+                n_mfcc=n_mfcc,
+                n_fft=samples_per_frame
+            )
+
+            mfcc_features.append(mfcc)
+        except Exception as e:
+            print(f"Error processing {audio_entry['audio_file']}: {e}")
+            mfcc_features.append(None)
+
+    return mfcc_features
+
 
 def extract_zcr(audio_data):
     """
