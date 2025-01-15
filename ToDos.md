@@ -11,6 +11,7 @@ TODOs:
         - RF
         - XGB
     - Time Table
+    - find letztes Modell raus
 
 
     Übersicht:
@@ -18,3 +19,4 @@ TODOs:
     - Approaches die pro project verwendet wurde
         - Train/Test Split Approach
         - Teil das in Audio/Video und beim Modell noch für das gemeinsame
+        - Erkläre für SIM 2 warum wir wieder das gradient boosting verwenden (GPT -> besser für mehr Experimente)

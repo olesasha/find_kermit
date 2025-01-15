@@ -174,7 +174,7 @@ def nested_cross_validation(feature_df, train_cols, target_col, model_class, par
 
 
 
-import xgboost as xgb
+import xgboost as xgb # type: ignore
 from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 import pandas as pd
