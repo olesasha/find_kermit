@@ -188,23 +188,3 @@ def extract_rhythm(audio_data):
     return rhythm_features
 
 
-def create_target_variable(df):
-    """
-    Create a target variable with:
-    0: Neither Kermit nor Waldorf & Statler are present.
-    1: Only Kermit is present.
-    2: Only Waldorf & Statler are present.
-    3: Both are present.
-
-    Parameters:
-    - df (pd.DataFrame): DataFrame with 'Kermit' and 'Audio_StatlerWaldorf' columns.
-
-    Returns:
-    - pd.Series: Target variable.
-    """
-    # Create the target variable based on the specified conditions
-    target = (
-        (df['Kermit'] == 1).astype(int) * 1 +  # Kermit contributes 1
-        (df['Audio_StatlerWaldorf'] == 1).astype(int) * 2  # Statler & Waldorf contribute 2
-    )
-    return target
