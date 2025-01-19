@@ -115,33 +115,3 @@ def run_setup(data_path, frames_output_dir, audio_output_dir, annotations_path, 
     # Step 3: Extract audio
     extract_audio(muppet_files, data_path, audio_output_dir)
 
-
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description="Extract frames and audio for Muppet videos.")
-#     parser.add_argument("--data_path", type=str, required=True, help="Directory containing the video files.")
-#     parser.add_argument("--frames_output_dir", type=str, required=True, help="Directory to save extracted frames.")
-#     parser.add_argument("--audio_output_dir", type=str, required=True, help="Directory to save extracted audio.")
-#     parser.add_argument("--annotations_path", type=str, required=True, help="Directory containing annotation files.")
-#     args = parser.parse_args()
-
-#     data_path = args.data_path
-#     frames_output_dir = args.frames_output_dir
-#     audio_output_dir = args.audio_output_dir
-#     annotations_path = args.annotations_path
-
-#     # TODO: das hier ist nicht elegant!
-#     muppet_files = {
-#         "Muppets-02-01-01.avi": "GroundTruth_Muppets-02-01-01.csv",
-#         "Muppets-02-04-04.avi": "GroundTruth_Muppets-02-04-04.csv",
-#         "Muppets-03-04-03.avi": "GroundTruth_Muppets-03-04-03.csv",
-#     }
-
-#     # Step 1: Load annotations
-#     annotations = load_annotations(annotations_path, muppet_files)
-
-#     # Step 2: Extract frames
-#     extract_frames(muppet_files, annotations, data_path, frames_output_dir)
-
-#     # Step 3: Extract audio
-#     extract_audio(muppet_files, data_path, audio_output_dir, annotations_path)
-

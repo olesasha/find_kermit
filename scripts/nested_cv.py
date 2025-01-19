@@ -27,7 +27,6 @@ def partition_feature_df(feature_df, grp_by, split_points = SPLIT_POINTS):
 
     # Update the fold values based on the split points
     for video_idx, split_point in split_points.items():
-        # Create the "-A" mask for the current video
         mask = feature_df['video_idx'] == video_idx
         
         # Assign the fold value as "{video_idx}-B" for frames after the split point
