@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 
 # Evaluation Function
-def evaluate_model(y_test, y_pred, title="Model Evaluation"):
+def evaluate_model_ho(y_test, y_pred, title="Model Evaluation"):
     """
     Evaluates a model based on precomputed true labels (y_test) and predictions (y_pred).
     
