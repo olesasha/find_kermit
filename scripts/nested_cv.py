@@ -149,9 +149,9 @@ def nested_cross_validation(feature_df, train_cols, target_col, model_class, par
         fold_metrics = {
             'outer_fold': outer_fold,
             'accuracy': accuracy_score(y_outer_val, y_outer_pred),
-            'precision': precision_score(y_outer_val, y_outer_pred, average='weighted', zero_division=0),
-            'recall': recall_score(y_outer_val, y_outer_pred, average='weighted', zero_division=0),
-            'f1': f1_score(y_outer_val, y_outer_pred, average='weighted', zero_division=0)
+            'precision': precision_score(y_outer_val, y_outer_pred, average='binary', zero_division=np.nan),
+            'recall': recall_score(y_outer_val, y_outer_pred, average='binary', zero_division=np.nan),
+            'f1': f1_score(y_outer_val, y_outer_pred, average='binary', zero_division=np.nan)
         }
 
         if y_outer_proba is not None:
@@ -180,7 +180,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 import pandas as pd
 import numpy as np
 
-def ncv_xgb_gpu(feature_df, train_cols, target_col, param_grid):
+def ncv_xgb_gpu(feature_df, train_cols, target_col, param_grid, eval_metric = "auc"):
     """
     Perform nested cross-validation using GPU-accelerated XGBoost with predefined folds,
     returning models, feature_df, and a summary of results.
@@ -227,7 +227,7 @@ def ncv_xgb_gpu(feature_df, train_cols, target_col, param_grid):
                 params['tree_method'] = 'hist'  # Use histogram-based tree method
                 params['device'] = 'cuda'      # Enable GPU acceleration
                 params['objective'] = 'binary:logistic'  # For binary classification
-                params['eval_metric'] = 'auc'
+                params['eval_metric'] = eval_metric # ACHTUNG wir stellen das scoring hier um
 
                 model = xgb.train(params, dtrain, num_boost_round=100, evals=[(dval, "validation")], verbose_eval=False)
                 predictions = model.predict(dval)
@@ -247,7 +247,7 @@ def ncv_xgb_gpu(feature_df, train_cols, target_col, param_grid):
         best_model_params['tree_method'] = 'hist'
         best_model_params['device'] = 'cuda'
         best_model_params['objective'] = 'binary:logistic'
-        best_model_params['eval_metric'] = 'auc'
+        best_model_params['eval_metric'] = eval_metric
 
         model = xgb.train(best_model_params, dtrain_outer, num_boost_round=100)
         best_models[outer_fold] = model
@@ -260,9 +260,9 @@ def ncv_xgb_gpu(feature_df, train_cols, target_col, param_grid):
         metrics = {
             'outer_fold': outer_fold,
             'accuracy': accuracy_score(y_outer_val, y_outer_pred),
-            'precision': precision_score(y_outer_val, y_outer_pred, average='weighted', zero_division=0),
-            'recall': recall_score(y_outer_val, y_outer_pred, average='weighted', zero_division=0),
-            'f1': f1_score(y_outer_val, y_outer_pred, average='weighted', zero_division=0),
+            'precision': precision_score(y_outer_val, y_outer_pred, average='binary', zero_division=np.nan),
+            'recall': recall_score(y_outer_val, y_outer_pred, average='binary', zero_division=np.nan),
+            'f1': f1_score(y_outer_val, y_outer_pred, average='binary', zero_division=np.nan),
             'roc_auc': roc_auc_score(y_outer_val, predictions)
         }
 
@@ -377,3 +377,50 @@ def evaluate_model(best_models, feature_df, train_cols, target_col, cv_results, 
             plt.ylabel("Features")
             plt.tight_layout()
             plt.show()
+
+
+
+
+import matplotlib.pyplot as plt
+import pandas as pd
+def plot_feature_importances(best_models, feature_df, train_cols, cv_results, n=None, name = ""):
+    """
+    Plot feature importances for the best fold in nested CV.
+
+    Parameters:
+    - best_models: dict, dictionary of best models for each fold.
+    - feature_df: pd.DataFrame, DataFrame containing features and folds.
+    - train_cols: list, names of training feature columns.
+    - cv_results: pd.DataFrame, results of nested CV containing metrics for each fold.
+    - n: int, optional. Number of top features to plot. If None, plot all features.
+    """
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    # Extract the best fold based on ROC AUC
+    best_fold = cv_results.loc[cv_results['roc_auc'].idxmax(), 'outer_fold']
+    best_model = best_models[best_fold]
+
+    # Get feature importances from the model
+    importances = best_model.get_score(importance_type='gain')  # or 'weight'/'cover'
+    # Map feature names to their importances
+    sorted_importances = sorted(importances.items(), key=lambda x: x[1], reverse=True)
+    sorted_features = [(train_cols[int(k[1:])], v) for k, v in sorted_importances]  # Map feature names
+
+    # Convert to DataFrame for easier manipulation
+    importance_df = pd.DataFrame(sorted_features, columns=['Feature', 'Importance'])
+
+    # Limit the number of features if n is specified
+    if n is not None:
+        importance_df = importance_df.head(n)
+
+    # Plot
+    plt.figure(figsize=(12, 8))
+    importance_df.sort_values(by='Importance', ascending=False).plot(
+        x='Feature', y='Importance', kind='barh', legend=False, figsize=(10, 6)
+    )
+    plt.title(f"Feature Importances for Best Fold {name}")
+    plt.xlabel("Importance")
+    plt.ylabel("Feature")
+    plt.tight_layout()
+    plt.show()

@@ -20,3 +20,5 @@ TODOs:
         - Train/Test Split Approach
         - Teil das in Audio/Video und beim Modell noch für das gemeinsame
         - Erkläre für SIM 2 warum wir wieder das gradient boosting verwenden (GPT -> besser für mehr Experimente)
+
+        provide a textual description of all processing steps
