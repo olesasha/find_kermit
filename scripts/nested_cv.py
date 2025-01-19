@@ -287,7 +287,7 @@ def ncv_xgb_gpu(feature_df, train_cols, target_col, param_grid, eval_metric = "a
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score
 import matplotlib.pyplot as plt
 import seaborn as sns
-import xgboost as xgb
+import xgboost as xgb #type: ignore
 
 def evaluate_model(best_models, feature_df, train_cols, target_col, cv_results, spec_fold=None):
     """
