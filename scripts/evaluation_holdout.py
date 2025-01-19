@@ -17,9 +17,9 @@ def evaluate_model(y_test, y_pred, title="Model Evaluation"):
     """
     # Metrics calculation
     accuracy = np.mean(y_test == y_pred)
-    precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
-    recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
-    f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+    precision = precision_score(y_test, y_pred, average='binary', zero_division=0)
+    recall = recall_score(y_test, y_pred, average='binary', zero_division=0)
+    f1 = f1_score(y_test, y_pred, average='binary', zero_division=0)
     
     # Printing the evaluation metrics
     print(f"Evaluation Metrics for {title}:")
