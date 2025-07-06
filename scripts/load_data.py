@@ -63,34 +63,6 @@ def load_full_audio(audio_output_dir, muppet_files, data_path):
         except Exception as e:
             print(f"Error processing audio file '{audio_file}': {e}")
             continue
-
-
-
-    # for audio_file in Path(audio_output_dir).glob("*.wav"):
-    #     audio, sr = librosa.load(str(audio_file), sr=None)
-    #     audio_data.append({"audio_file": audio_file.name, "audio": audio, "sr": sr})
-
-
-    # for i in muppet_files.keys():
-    #     video_path = os.path.join(data_path, i)
-        
-    #     try:
-    #         # extract video duration
-    #         duration_command = (
-    #             f"ffprobe -v error -select_streams v:0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{video_path}\""
-    #         )
-
-    #         ffprobe_out = os.popen(duration_command).read().strip()
-    #         # Check if output is empty
-    #         if not ffprobe_out:
-    #             raise ValueError(f"Could not retrieve duration for video: {video_path}")
-
-    #     except Exception as e:
-    #         print(f"Error retrieving duration for video '{i}': {e}")
-    #         continue
-    #     video_duration = float(ffprobe_out)    
-    
-    
     
     print(f"Loaded {len(audio_data)} audio files.")
 
@@ -110,10 +82,8 @@ def load_frames(muppet_files: dict, frames_output_dir: str):
     frames = {}
 
     for video_idx, video_file in enumerate(muppet_files.keys()):
-        # Use the video filename (without extension) as a prefix to identify frames
-        video_prefix = os.path.splitext(video_file)[0]
 
-        # Find all frames matching the prefix
+        video_prefix = os.path.splitext(video_file)[0]
         frame_files = [
             frame for frame in os.listdir(frames_output_dir)
             if frame.startswith(video_prefix) and frame.endswith(".png")
@@ -123,7 +93,6 @@ def load_frames(muppet_files: dict, frames_output_dir: str):
             print(f"Warning: No frames found for video {video_file}.")
             continue
 
-        # Parse frame indices and create (frame_idx, frame_path) tuples
         ordered_frames = []
         for frame in frame_files:
             try:
@@ -157,7 +126,6 @@ def check_and_load(data_path, frames_output_dir, audio_output_dir, annotations_p
 
     if not (frames_extracted and audio_extracted):
         print("Frames and/or audio not extracted. Running setup script...")
-        #run_setup_script(data_path, frames_output_dir, audio_output_dir, annotations_path)
         run_setup(data_path, frames_output_dir, audio_output_dir, annotations_path, muppet_files)
     else:
         print("Frames and audio are already extracted.")
@@ -177,9 +145,7 @@ def check_and_load(data_path, frames_output_dir, audio_output_dir, annotations_p
     audio_data = load_full_audio(audio_output_dir, muppet_files, data_path)
 
     print(f"Loaded audio segments for {len(audio_data)} videos.")
-    # Inspect loaded audio segments
-    # for video_idx, segment_list in audio_data.items():
-    #     print(f"Video {video_idx} has {len(segment_list)} audio segments.")
+
 
     # Load and inspect frames
     frames = load_frames(muppet_files, frames_output_dir)
