@@ -1,3 +1,5 @@
+The goal of the porject is to detect various Mupper Show characters using either audio (voice), video data, or both, based on 3 full Mupper Show episodes and manually generated golden truth annotations.  
+
 # Final Hand-In for Similarity Modeling 1 & 2 - Setup outside of find_kermit
 
 - folder: ground_truth_data 
